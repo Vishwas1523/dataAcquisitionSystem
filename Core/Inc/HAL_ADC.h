@@ -145,6 +145,7 @@ typedef struct __attribute__((packed)){
 	ADC_Function_t leftDataAlignment;	/* ALIGN BIT in CR2 Register -> 0 = Right Alignment, 1 = Left Alignment */
 	ADC_ExtEvent_t extEventSelection;
 	ADC_ExtTrig_t extTrigEnable;
+	ADC_Function_t softwareTrigger;
 	ADC_SamplingTime_t samplingTime;	/* Keeping same sample time for all the channels as of now */
 	ADC_NumberOfConversions_t numberOfConversions;
 	ADC_ChannelConfig_t channel[16];

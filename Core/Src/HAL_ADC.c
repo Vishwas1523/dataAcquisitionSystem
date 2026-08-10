@@ -2,8 +2,13 @@
 
 static void ADC_SamplingCycleConfig(ADC_Handle_t* hadc);
 static void ADC_SequenceConfig(ADC_Handle_t* hadc);
+static void ADC_Clock_Enable(ADC_Handle_t* hadc);
 
 void ADC_Init(ADC_Handle_t* hadc){
+
+	/* Enabling Clocks for ADC */
+	ADC_Clock_Enable(hadc);
+
 	/* Configuring EOC interrupt */
 	hadc->instance->CR1     &= ~(1U << 5);
 	hadc->instance->CR1		|= hadc->config->eocEnable << 5;
@@ -102,30 +107,29 @@ static void ADC_SamplingCycleConfig(ADC_Handle_t* hadc){
 
 void ADC_Start(ADC_Handle_t* hadc){
 
+
+	/*	Starting the ADC by setting ADON Bit */
+	hadc->instance->CR2		|= (1U << 0);
+
+	for(volatile uint32_t i = 0; i < 10000; i++);
+
+	/* Starting the ADC conversions by enabling software trigger
+	 * if no external trigger is configured. */
+	hadc->instance->CR2 |=  hadc->config->softwareTrigger<<30;
+
+}
+
+
+uint16_t ADC_Read(ADC_Handle_t* hadc){
+	return hadc->instance->DR;
+}
+
+static void ADC_Clock_Enable(ADC_Handle_t* hadc){
 	/* Enabling Clock for ADC Engines */
 	if(hadc->instance == ADC_1)	ADC1_CLK_EN;
 	else if(hadc->instance == ADC_2)	ADC2_CLK_EN;
 	else if(hadc->instance == ADC_3)	ADC3_CLK_EN;
-
-	/*	Starting the ADC by setting ADON Bit */
-	hadc->instance->CR2 	&= ~(1U	<< 0);
-	hadc->instance->CR2		|= (1U << 0);
-
-	/* Starting the ADC conversions by enabling software trigger
-	 * if no external trigger is configured. */
-	if(hadc->config->extTrigEnable == ADC_TRIG_DISABLE){
-		hadc->instance->CR2		&= ~(1U << 30);
-		hadc->instance->CR2		|= (1U << 30);
-	}
 }
-
-
-inline uint16_t ADC_Read(ADC_Handle_t* hadc){
-	return hadc->instance->DR;
-}
-
-
-
 
 
 
