@@ -16,7 +16,7 @@ int main(void){
 
 	ADC_Config_t config1 = {
 			.channel[0] = ADC_CHANNEL_0,
-			.continuousMode = ADC_DISABLE,
+			.continuousMode = ADC_ENABLE,
 			.dmaDisableSelection = ADC_DISABLE,
 			.dmaEnable = ADC_DISABLE,
 			.eocEnable = ADC_ENABLE,
@@ -41,13 +41,11 @@ int main(void){
 	ADC_Init(&hadc1);
 	ADC_Start(&hadc1);
 	volatile uint16_t sample = 0x00;
-
+	sample = ADC_Read(&hadc1);
 	while(1){
-		volatile uint16_t x = ADC_Read(&hadc1);
 		if(adc_flag == 1){
-			sample = ADC_Read(&hadc1);
-			(void)sample;
 			adc_flag = 0;
+			sample = ADC_Read(&hadc1);
 		}
 
 	}
