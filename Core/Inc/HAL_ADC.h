@@ -1,4 +1,4 @@
-
+#include "stm32f446xx.h"
 #include <stdint.h>
 #ifndef INC_HAL_ADC_H_
 #define INC_HAL_ADC_H_
@@ -33,6 +33,12 @@ typedef struct{
 #define ADC_2									(ADC_Type*)0x40012100
 #define ADC_3									(ADC_Type*)0x40012200
 #define ADC_123									(ADC_Common_Type*)0x40012300
+
+//------------------------------- ADC Clock Configurations ------------------------------
+
+#define ADC1_CLK_EN								(RCC->APB2ENR	|= (1U	<<	8))
+#define ADC2_CLK_EN								(RCC->APB2ENR	|= (1U	<<	9))
+#define ADC3_CLK_EN								(RCC->APB2ENR	|= (1U	<<	10))
 
 //------------------------------- ADC Configuration --------------------------------------
 
@@ -108,6 +114,25 @@ typedef enum{
 	ADC_CHANNEL_18		/* Temperature Sensor */
 }ADC_ChannelConfig_t; /* Helps in selecting the channel sequence */
 
+typedef enum{
+	ADC_1_CONVERSION = 0,
+	ADC_2_CONVERSIONS,
+	ADC_3_CONVERSIONS,
+	ADC_4_CONVERSIONS,
+	ADC_5_CONVERSIONS,
+	ADC_6_CONVERSIONS,
+	ADC_7_CONVERSIONS,
+	ADC_8_CONVERSIONS,
+	ADC_9_CONVERSIONS,
+	ADC_10_CONVERSIONS,
+	ADC_11_CONVERSIONS,
+	ADC_12_CONVERSIONS,
+	ADC_13_CONVERSIONS,
+	ADC_14_CONVERSIONS,
+	ADC_15_CONVERSIONS,
+	ADC_16_CONVERSIONS,
+}ADC_NumberOfConversions_t;		/* Helps in configuring number of conversions */
+
 typedef struct __attribute__((packed)){
 	ADC_Function_t eocEnable;
 	ADC_Function_t scanMode;
@@ -120,8 +145,8 @@ typedef struct __attribute__((packed)){
 	ADC_Function_t leftDataAlignment;	/* ALIGN BIT in CR2 Register -> 0 = Right Alignment, 1 = Left Alignment */
 	ADC_ExtEvent_t extEventSelection;
 	ADC_ExtTrig_t extTrigEnable;
-	ADC_SamplingTime_t samplingTime;
-	uint8_t numberOfConversions : 4;
+	ADC_SamplingTime_t samplingTime;	/* Keeping same sample time for all the channels as of now */
+	ADC_NumberOfConversions_t numberOfConversions;
 	ADC_ChannelConfig_t channel[16];
 }ADC_Config_t;		/* ADC configurations */
 
@@ -135,7 +160,8 @@ typedef struct __attribute__((packed)){
 
 //-------------------------------- ADC Functions --------------------------------------
 
-void ADC_Init(ADC_Handle_t* hdac);
-
+void ADC_Init(ADC_Handle_t* hadc);
+void ADC_Start(ADC_Handle_t* hadc);
+uint16_t ADC_Read(ADC_Handle_t* hadc);
 
 #endif /* INC_HAL_ADC_H_ */
