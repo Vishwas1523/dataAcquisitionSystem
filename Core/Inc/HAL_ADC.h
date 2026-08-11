@@ -162,7 +162,7 @@ typedef struct __attribute__((packed)){
 //-------------------------------- ADC Functions --------------------------------------
 
 void ADC_Init(ADC_Handle_t* hadc);
-void ADC_Start(ADC_Handle_t* hadc);
+void ADC_SwStart(ADC_Handle_t* hadc);
 uint16_t ADC_Read(ADC_Handle_t* hadc);
 
 #endif /* INC_HAL_ADC_H_ */

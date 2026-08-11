@@ -59,6 +59,9 @@ void ADC_Init(ADC_Handle_t* hadc){
 
 	/* Configuring Sampling time of each channel */
 	ADC_SamplingCycleConfig(hadc);
+
+	/*	Starting the ADC by setting ADON Bit */
+	hadc->instance->CR2		|= (1U << 0);
 }
 
 
@@ -69,7 +72,7 @@ static void ADC_SequenceConfig(ADC_Handle_t* hadc){
 	hadc->instance->SQR1	|= 	hadc->config->numberOfConversions << 20;
 
 	/* Configuring sequence of Channels */
-	for(int i = 0; i < hadc->config->numberOfConversions; i++){
+	for(int i = 0; i <= hadc->config->numberOfConversions; i++){
 		if(i < 6){
 			hadc->instance->SQR3	&= ~(31U << (5 * i));
 			hadc->instance->SQR3	|= (hadc->config->channel[i] << (5 * i));
@@ -86,7 +89,7 @@ static void ADC_SequenceConfig(ADC_Handle_t* hadc){
 
 static void ADC_SamplingCycleConfig(ADC_Handle_t* hadc){
 
-	for(int i = 0; i < hadc->config->numberOfConversions; i++){
+	for(int i = 0; i <= hadc->config->numberOfConversions; i++){
 
 		if(hadc->config->channel[i] < 10){
 			hadc->instance->SMPR2 &=
@@ -105,18 +108,11 @@ static void ADC_SamplingCycleConfig(ADC_Handle_t* hadc){
 }
 
 
-void ADC_Start(ADC_Handle_t* hadc){
-
-
-	/*	Starting the ADC by setting ADON Bit */
-	hadc->instance->CR2		|= (1U << 0);
-
-	for(volatile uint32_t i = 0; i < 10000; i++);
+void ADC_SwStart(ADC_Handle_t* hadc){
 
 	/* Starting the ADC conversions by enabling software trigger
 	 * if no external trigger is configured. */
 	hadc->instance->CR2 |=  hadc->config->softwareTrigger<<30;
-
 }
 
 

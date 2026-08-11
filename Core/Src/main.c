@@ -3,20 +3,25 @@
 #include "HAL_ADC.h"
 
 ADC_Handle_t hadc1 = {0};
-volatile uint8_t adc_flag;
-
+volatile uint8_t adc_flag = 0;
+volatile uint16_t adc_sample;
+volatile uint32_t irq_count = 0;
+volatile uint32_t eoc_seen = 0;
+volatile uint32_t flag_set = 0;
+volatile uint8_t adc_busy = 0;
+volatile uint32_t conversion_done = 0;
 int main(void){
 
 	GPIO_Handle_t hgpio1 = {0};
 	hgpio1.instance = GPIO_PORT_A;
 	hgpio1.config.mode = GPIO_ANALOG_MODE;
 	hgpio1.config.pullUp_pullDown = GPIO_NO_PULLUP_PULLDOWN;
-	hgpio1.config.GPIO_PinNumber = 0;
-	GPIO_Init(&hgpio1, 0);
+	hgpio1.config.GPIO_PinNumber = 1;
+	GPIO_Init(&hgpio1, 1);
 
 	ADC_Config_t config1 = {
-			.channel[0] = ADC_CHANNEL_0,
-			.continuousMode = ADC_ENABLE,
+			.channel[0] = ADC_CHANNEL_1,
+			.continuousMode = ADC_DISABLE,
 			.dmaDisableSelection = ADC_DISABLE,
 			.dmaEnable = ADC_DISABLE,
 			.eocEnable = ADC_ENABLE,
@@ -27,7 +32,7 @@ int main(void){
 			.numberOfConversions = ADC_1_CONVERSION,
 			.overrunEnable = ADC_DISABLE,
 			.resolution = ADC_12_BIT_RESOLUTION,
-			.samplingTime = ADC_SAMPLING_CYCLES_480,
+			.samplingTime = ADC_SAMPLING_CYCLES_3,
 			.scanMode = ADC_DISABLE
 	};
 
@@ -35,17 +40,23 @@ int main(void){
 	hadc1.config = &config1;
 	hadc1.adc = ADC_123;
 
+	ADC_Init(&hadc1);
+
 	NVIC_EnableIRQ(ADC_IRQn);
 	__enable_irq();
 
-	ADC_Init(&hadc1);
-	ADC_Start(&hadc1);
-	volatile uint16_t sample = 0x00;
-	sample = ADC_Read(&hadc1);
+	volatile uint16_t sample;
 	while(1){
-		if(adc_flag == 1){
+
+
+		ADC_SwStart(&hadc1);
+
+
+
+		if(adc_flag){
 			adc_flag = 0;
-			sample = ADC_Read(&hadc1);
+			sample = adc_sample;
+			(void)sample;
 		}
 
 	}
@@ -53,18 +64,24 @@ int main(void){
 }
 
 
-void ADC_IRQHandler(void){
-			adc_flag = 1;
+void ADC_IRQHandler(void) {
+
+	irq_count++;
+    if (hadc1.instance->SR & (1U << 1)) {
+    	eoc_seen++;
+        adc_sample = hadc1.instance->DR;  // acknowledges EOC
+        adc_sample = 0x55;
+        adc_flag = 1;
+        flag_set++;
+    }
 }
 
 
 /*
- * Trying to fire the IRQHanlder via EOC but the interrupt is only firing
- * once after calling ADC_Read() function. That too only once and after
- * enter the IRQ it goes to ADC_Read() function and then goes to super loop.
- *
- */
-
+ * Error solved,reasons:
+ * 1) counter in ADC_SequenceConfig and ADC_SamplingCycleConfig never started.
+ * 2) While debugging I was constantly doing Step-Into (F6) instead of resume (F8)
+ * */
 
 
 
