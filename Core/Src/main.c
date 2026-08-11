@@ -3,13 +3,7 @@
 #include "HAL_ADC.h"
 
 ADC_Handle_t hadc1 = {0};
-volatile uint8_t adc_flag = 0;
-volatile uint16_t adc_sample;
-volatile uint32_t irq_count = 0;
-volatile uint32_t eoc_seen = 0;
-volatile uint32_t flag_set = 0;
-volatile uint8_t adc_busy = 0;
-volatile uint32_t conversion_done = 0;
+
 int main(void){
 
 	GPIO_Handle_t hgpio1 = {0};
@@ -45,20 +39,8 @@ int main(void){
 	NVIC_EnableIRQ(ADC_IRQn);
 	__enable_irq();
 
-	volatile uint16_t sample;
 	while(1){
-
-
 		ADC_SwStart(&hadc1);
-
-
-
-		if(adc_flag){
-			adc_flag = 0;
-			sample = adc_sample;
-			(void)sample;
-		}
-
 	}
 	return 0;
 }
@@ -66,22 +48,11 @@ int main(void){
 
 void ADC_IRQHandler(void) {
 
-	irq_count++;
     if (hadc1.instance->SR & (1U << 1)) {
-    	eoc_seen++;
-        adc_sample = hadc1.instance->DR;  // acknowledges EOC
-        adc_sample = 0x55;
-        adc_flag = 1;
-        flag_set++;
+
     }
 }
 
-
-/*
- * Error solved,reasons:
- * 1) counter in ADC_SequenceConfig and ADC_SamplingCycleConfig never started.
- * 2) While debugging I was constantly doing Step-Into (F6) instead of resume (F8)
- * */
 
 
 
