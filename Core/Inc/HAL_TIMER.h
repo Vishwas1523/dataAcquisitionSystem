@@ -41,41 +41,54 @@ typedef struct{
 
 
 typedef enum{
-
-}TIM_Channel_t;
+	TIM_CC1_SELECTION = 0,
+	TIM_CC2_SELECTION,
+	TIM_CC3_SELECTION,
+	TIM_CC4_SELECTION
+}TIM_Channel_t;		/* Helps in selecting channels of a timer */
 
 typedef enum {
-
+	TIM_CCx_OUTPUT_MODE = 0,
+	TIM_CCx_IC_TI1,
+	TIM_CCx_IC_TI2,
+	TIM_CCx_IC_TRC,
 } TIM_Channel_Dir_t;	/* Defines the direction of channels (Input/Output)
 						 * as well as the used input */
 
 typedef enum {
+	TIM_OC_FROZEN_MODE = 0,
+	TIM_OC_SET_ACTIVE_LVL,
+	TIM_OC_SET_INACTIVE_LVL,
+	TIM_OC_TOGGLE_MODE,
+	TIM_OC_FORCE_ACTIVE_LVL,
+	TIM_OC_FORCE_INACTIVE_LVL,
+	TIM_OC_PWM_MODE1,
+	TIM_OC_PWM_MODE2
+} TIM_OC_Mode_t;	/* Helps in configuring output modes */
 
-} TIM_OC_Mode_t;
-
-typedef enum {
-
-} TIM_IC_Prescaler_t;
-
-typedef enum {
-
-} TIM_IC_Filter_t;
-
-typedef enum {
-
-} TIM_Function_t;
 
 typedef enum {
-
-} TIM_Polarity_t;
-
-typedef enum {
-
-} TIM_Direction_t;
+	TIM_DISABLE = 0,
+	TIM_ENABLE
+} TIM_Function_t;	/* General Enable-Disable options */
 
 typedef enum {
+	TIM_OC_ACTIVE_HIGH = 0,
+	TIM_OC_ACTIVE_LOW
+} TIM_OC_Polarity_t;	/* Helps in configuring Outpute mode polarity */
 
-} TIM_CenterAlign_t;
+typedef enum {
+	TIM_DIR_UPCOUNTING = 0,
+	TIM_DIR_DOWNCOUNTING
+} TIM_Direction_t;	/* Helps in configuring direction of the counter */
+
+typedef enum {
+	TIM_EDGE_ALIGNED_MODE = 0,
+	/*If CEN bit in CR1 Register is Set then the following modes will not work */
+	TIM_CENTER_ALIGNED_MODE_1,
+	TIM_CENTER_ALIGNED_MODE_2,
+	TIM_CENTER_ALIGNED_MODE_3,
+} TIM_CenterAlign_t;	/*Helps in configuring the central aligned mode */
 
 typedef struct __attribute__((packed)){
 	uint16_t ARR;
@@ -83,13 +96,14 @@ typedef struct __attribute__((packed)){
 	TIM_Channel_t channel;
 	TIM_Channel_Dir_t channelDir;
 	TIM_OC_Mode_t ocMode;
-	TIM_IC_Prescaler_t icPSC;
-	TIM_IC_Filter_t icFilter;
+	uint16_t icPSC;
+	uint16_t icFilter;
 	TIM_Function_t ocPreloadEnable;
 	TIM_Function_t ocARREnable;
-	TIM_Polarity_t ocPolarity;
+	TIM_OC_Polarity_t ocPolarity;
 	TIM_Direction_t ocdirection;
 	TIM_CenterAlign_t centerAlignMode;
+	TIM_Function_t onePulseMode;
 }TIM_Config_t;
 
 //------------------------------ TIMER Handler ------------------------------------------
