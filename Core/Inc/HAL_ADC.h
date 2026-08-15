@@ -55,7 +55,7 @@ typedef enum{
 }ADC_Resolution_t;		/* Helps in selecting the resolution of ADC conversions */
 
 typedef enum{
-	ADC_TIM1_CC1_TRIG = 0,
+	ADC_TIM1_CC1 = 0,
 	ADC_TIM1_CC2,
 	ADC_TIM1_CC3,
 	ADC_TIM2_CC2,

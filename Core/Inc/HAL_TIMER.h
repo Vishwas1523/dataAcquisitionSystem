@@ -37,21 +37,26 @@ typedef struct{
 #define TIM_4									(TIM_Type*)0x40000800
 #define TIM_5									(TIM_Type*)0x40000C00
 
+
+//----------------------------- TIMER CLOCK ENABLE ----------------------------------
+
+#define TIM2_CLK_ENABLE							(RCC->APB1ENR |= (1U << 0U))
+
 //-------------------------- TIMER Configurations --------------------------------
 
 
 typedef enum{
-	TIM_CC1_SELECTION = 0,
-	TIM_CC2_SELECTION,
-	TIM_CC3_SELECTION,
-	TIM_CC4_SELECTION
+	TIM_CHANNEL_1= 0,
+	TIM_CHANNEL_2,
+	TIM_CHANNEL_3,
+	TIM_CHANNEL_4
 }TIM_Channel_t;		/* Helps in selecting channels of a timer */
 
 typedef enum {
-	TIM_CCx_OUTPUT_MODE = 0,
-	TIM_CCx_IC_TI1,
-	TIM_CCx_IC_TI2,
-	TIM_CCx_IC_TRC,
+	TIM_OUTPUT_MODE = 0,
+	TIM_IC_TI1,
+	TIM_IC_TI2,
+	TIM_IC_TRC,
 } TIM_Channel_Dir_t;	/* Defines the direction of channels (Input/Output)
 						 * as well as the used input */
 
@@ -65,7 +70,6 @@ typedef enum {
 	TIM_OC_PWM_MODE1,
 	TIM_OC_PWM_MODE2
 } TIM_OC_Mode_t;	/* Helps in configuring output modes */
-
 
 typedef enum {
 	TIM_DISABLE = 0,
@@ -92,7 +96,7 @@ typedef enum {
 
 typedef struct __attribute__((packed)){
 	uint16_t ARR;
-	uint32_t Counter;	/* Value is 32 Bit for TIM2 and TIM5 only */
+	uint16_t CCRx;	/* Value is 32 Bit for TIM2 and TIM5 only */
 	TIM_Channel_t channel;
 	TIM_Channel_Dir_t channelDir;
 	TIM_OC_Mode_t ocMode;
@@ -110,13 +114,13 @@ typedef struct __attribute__((packed)){
 
 typedef struct __attribute__((packed)){
 	TIM_Type* instance;
-	TIM_Config_t config;
+	TIM_Config_t* config;
 }TIM_Handle_t;
 
+//------------------------------- PWM Functions --------------------------------------
 
-
-
-
+void PWM_Init(TIM_Handle_t* htim);
+void PWM_Start(TIM_Handle_t* htim);
 
 
 
