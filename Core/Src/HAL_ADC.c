@@ -127,7 +127,9 @@ static void ADC_Clock_Enable(ADC_Handle_t* hadc){
 	else if(hadc->instance == ADC_3)	ADC3_CLK_EN;
 }
 
-
+void ADC_DmaPingPongTx(ADC_Handle_t* hadc, DMA_Handle_t* hdma, uint32_t dstAddress1, uint32_t dstAddress2){
+	DMA_DoubleBuffer_Start(hdma, (uint32_t)&hadc->instance->DR, dstAddress1, dstAddress2, 100);
+}
 
 
 

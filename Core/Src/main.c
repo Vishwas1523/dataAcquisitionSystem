@@ -2,10 +2,14 @@
 #include "HAL_GPIO.h"
 #include "HAL_ADC.h"
 #include "HAL_TIMER.h"
+#include "HAL_DMA.h"
 
 ADC_Handle_t hadc1 = {0};
 TIM_Handle_t htim1 = {0};
-volatile uint16_t count = 0;
+DMA_Handle_t hdma1 = {0};
+uint16_t buff1[100] = {0};
+uint16_t buff2[100] = {0};
+uint16_t count = 0;
 int main(void){
 
 	GPIO_Handle_t hgpio1 = {0};
@@ -27,8 +31,8 @@ int main(void){
 	ADC_Config_t config1 = {
 			.channel[0] = ADC_CHANNEL_1,
 			.continuousMode = ADC_DISABLE,
-			.dmaDisableSelection = ADC_DISABLE,
-			.dmaEnable = ADC_DISABLE,
+			.dmaDisableSelection = ADC_ENABLE,
+			.dmaEnable = ADC_ENABLE,
 			.eocEnable = ADC_ENABLE,
 			.eocSelection = ADC_ENABLE,
 			.extEventSelection = ADC_TIM2_CC3,
@@ -36,7 +40,7 @@ int main(void){
 			.leftDataAlignment = ADC_DISABLE,
 //			.softwareTrigger = ADC_ENABLE,
 			.numberOfConversions = ADC_1_CONVERSION,
-			.overrunEnable = ADC_DISABLE,
+			.overrunEnable = ADC_ENABLE,
 			.resolution = ADC_12_BIT_RESOLUTION,
 			.samplingTime = ADC_SAMPLING_CYCLES_3,
 			.scanMode = ADC_DISABLE
@@ -48,6 +52,18 @@ int main(void){
 			.ocdirection = TIM_DIR_UPCOUNTING
 	};
 
+	DMA_Stream_Config_t config3 = {
+			.direction = DMA_DIRECTION_PER_TO_MEM,
+			.peripheralIncrementMode = DMA_DISABLE,
+			.memoryIncrementMode = DMA_ENABLE,
+			.doubleBufferMode = DMA_ENABLE,
+			.PSIZE = DMA_DATA_SIZE_HALF_WORD,
+			.MSIZE = DMA_DATA_SIZE_HALF_WORD,
+			.priority = DMA_PRIORITY_VERY_HIGH,
+			.channel = DMA_CHANNEL0
+	};
+
+
 	hadc1.instance = ADC_1;
 	hadc1.config = &config1;
 	hadc1.adc = ADC_123;
@@ -55,20 +71,24 @@ int main(void){
 	htim1.instance = TIM_2;
 	htim1.config = &config2;
 
+	hdma1.controller = DMA_2;
+	hdma1.instance = DMA2_Stream_0;
+	hdma1.config = &config3;
+
+	DMA2_CLOCK_EN;
 	ADC_Init(&hadc1);
-//	ADC_SwStart(&hadc1);
+	DMA_Init(&hdma1);
+	DMA_DoubleBuffer_Start(&hdma1, (uint32_t)&hadc1.instance->DR, (uint32_t)&buff1, (uint32_t)&buff2, 100);
 	PWM_Init(&htim1);
 	PWM_Start(&htim1);
-	volatile uint16_t sample = 0;
+	volatile uint16_t sample = 11;
 	while(1){
-		if (hadc1.instance->SR & (1U << 1)) {
-		    	count++;
-				sample = hadc1.instance->DR;
-				(void)sample;
-		    }
+		sample = hadc1.instance->DR;
+		(void)sample;
+		count++;
 		if(count > 1000) break;
 	}
-	uint8_t temp = count;
+	uint16_t temp = count;
 	(void)temp;
 	return 0;
 }
@@ -76,11 +96,17 @@ int main(void){
 
 void ADC_IRQHandler(void) {
 
-    if (hadc1.instance->SR & (1U << 1)) {
+    if (hadc1.instance->SR & ADC_SR_EOC_EN) {
+
+    }
+
+    if (hadc1.instance->SR & ADC_SR_OVR_EN){
+    	hadc1.instance->SR &= ~ADC_SR_OVR_EN;
+    	ADC_DmaPingPongTx(&hadc1, &hdma1, (uint32_t)&buff1, (uint32_t)&buff2);
     }
 }
 
-
+	/* This program is not working */
 
 
 

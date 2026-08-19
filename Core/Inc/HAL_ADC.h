@@ -1,5 +1,6 @@
 #include "stm32f446xx.h"
 #include <stdint.h>
+#include "HAL_DMA.h"
 #ifndef INC_HAL_ADC_H_
 #define INC_HAL_ADC_H_
 
@@ -34,12 +35,13 @@ typedef struct{
 #define ADC_3									(ADC_Type*)0x40012200
 #define ADC_123									(ADC_Common_Type*)0x40012300
 
-//------------------------------- ADC Clock Configurations ------------------------------
+//------------------------------- ADC Bit Manipulation & Masking ------------------------------
 
 #define ADC1_CLK_EN								(RCC->APB2ENR	|= (1U	<<	8))
 #define ADC2_CLK_EN								(RCC->APB2ENR	|= (1U	<<	9))
 #define ADC3_CLK_EN								(RCC->APB2ENR	|= (1U	<<	10))
-
+#define ADC_SR_EOC_EN								(1UL << 1UL)
+#define ADC_SR_OVR_EN								(1UL << 5UL)
 //------------------------------- ADC Configuration --------------------------------------
 
 typedef enum{
@@ -164,5 +166,6 @@ typedef struct __attribute__((packed)){
 void ADC_Init(ADC_Handle_t* hadc);
 void ADC_SwStart(ADC_Handle_t* hadc);
 uint16_t ADC_Read(ADC_Handle_t* hadc);
+void ADC_DmaPingPongTx(ADC_Handle_t* hadc, DMA_Handle_t* hdma, uint32_t dstAddress1, uint32_t dstAddress2);
 
-#endif /* INC_HAL_ADC_H_ */
+#endif

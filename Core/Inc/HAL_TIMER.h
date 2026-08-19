@@ -123,16 +123,4 @@ void PWM_Init(TIM_Handle_t* htim);
 void PWM_Start(TIM_Handle_t* htim);
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 #endif /* INC_HAL_TIMER_H_ */

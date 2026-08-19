@@ -1,6 +1,6 @@
 #ifndef INC_HAL_DMA_H_
 #define INC_HAL_DMA_H_
-
+#include "stm32f446xx.h"
 #include <stdint.h>
 
 //-------------------------------- DMA Registers -----------------------------------
@@ -71,6 +71,7 @@ typedef struct __attribute__((packed)) {
 	DMA_FunctionalState_t circularMode;
 	DMA_FunctionalState_t peripheralIncrementMode;
 	DMA_FunctionalState_t memoryIncrementMode;
+	DMA_FunctionalState_t doubleBufferMode;
 	DMA_FunctionalState_t directModeDisable;
 	DMA_FIFO_Mode_t fifoMode;
 	DMA_Size_t PSIZE;
@@ -84,8 +85,8 @@ typedef struct __attribute__((packed)) {
 typedef struct __attribute__((packed)) {
 	DMA_Type* controller;
 	DMA_Stream_Type* instance;
-	DMA_Stream_Config_t config;
-}DMA_HandlerTypeDef;
+	DMA_Stream_Config_t* config;
+}DMA_Handle_t;
 
 //------------------------DMA1 Streams and their addresses---------------------
 #define DMA1_Stream_0				(DMA_Stream_Type*)0x40026010
@@ -107,9 +108,24 @@ typedef struct __attribute__((packed)) {
 #define DMA2_Stream_6				(DMA_Stream_Type*)0x400264A0
 #define DMA2_Stream_7				(DMA_Stream_Type*)0x400264B8
 
-//---------------------------- DMA Clock Enables ---------------------------------
+//------------------------DMA BIT MANIPULATION & MASKING----------------------
+#define DMA_CR_EN					(1<<0)
+#define DMA_CR_CHSEL_Pos			 25UL
+#define DMA_CR_PL_Pos				 16UL
+#define DMA_CR_DIR_Pos				 6UL
+#define DMA_CR_PINC_Pos				 9UL
+#define DMA_CR_MINC_Pos				 10UL
+#define DMA_CR_CIRC_Pos				 8UL
+#define DMA_CR_PSIZE_Pos			 11UL
+#define DMA_CR_MSIZE_Pos			 13UL
+#define DMA_FCR_DMDIS_DIS			(1<<2)
+#define DMA_FCR_FTH_Pos				 0UL
 #define DMA1_CLOCK_EN				(RCC->AHB1ENR |= (1<<21))
 #define DMA2_CLOCK_EN				(RCC->AHB1ENR |= (1<<22))
+#define DMA_CR_PINC_EN				(1<<9)
+#define DMA_CR_MINC_EN				(1<<10)
+#define DMA_CR_DBM_Pos				 18UL
+#define DMA_CR_CT_EN				(1UL<<19UL)
 
 //----------------------------DMA CONTROLLER--------------------------------------
 
@@ -117,9 +133,9 @@ typedef struct __attribute__((packed)) {
 #define DMA_2						(DMA_Type*)0x40026400
 
 //-----------------------------------DMA FUNCTIONS----------------------------------
-void DMA_Init(DMA_HandlerTypeDef* hdma);
-void DMA_Start(DMA_HandlerTypeDef* hdma, uint32_t srcAddress, uint32_t dstAddress, uint16_t numOfTransfers);
-void DMA_DeInit(DMA_HandlerTypeDef* hdma);
-
+void DMA_Init(DMA_Handle_t* hdma);
+void DMA_Start(DMA_Handle_t* hdma, uint32_t srcAddress, uint32_t dstAddress, uint16_t numOfTransfers);
+void DMA_DeInit(DMA_Handle_t* hdma);
+void DMA_DoubleBuffer_Start(DMA_Handle_t* hdma, uint32_t srcAddress, uint32_t dstAddress1, uint32_t dstAddress2, uint16_t numOfTransfers);
 
 #endif /* INC_HAL_DMA_H_ */
