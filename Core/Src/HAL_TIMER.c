@@ -2,6 +2,9 @@
 
 void PWM_Init(TIM_Handle_t* htim){
 
+	/* Enabling timer 2 clock */
+	TIM2_CLK_ENABLE;
+
 	switch (htim->config->channel){
 	case TIM_CHANNEL_1:
 		/* Configuring TIM in output mode */
@@ -66,13 +69,11 @@ void PWM_Init(TIM_Handle_t* htim){
 	htim->instance->CCR3 = 0x57E4;
 	htim->instance->PSC = 0;
 
-	/* Enabling timer 2 clock */
-	TIM2_CLK_ENABLE;
 }
 
 
 void PWM_Start(TIM_Handle_t* htim){
-	htim->instance->CR1 |= 1U	<<	0U;
+	htim->instance->CR1 |= (1U	<<	0U);
 }
 
 

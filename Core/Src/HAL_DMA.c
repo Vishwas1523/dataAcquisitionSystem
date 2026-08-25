@@ -52,6 +52,7 @@ void DMA_Start(DMA_Handle_t* hdma, uint32_t srcAddress, uint32_t dstAddress, uin
 				DMA_Init(hdma);
 				break;
 		}
+		hdma->instance->CR |= DMA_CR_EN;
 }
 
 void DMA_DoubleBuffer_Start(DMA_Handle_t* hdma, uint32_t srcAddress, uint32_t dstAddress1, uint32_t dstAddress2, uint16_t numOfTransfers){
@@ -64,6 +65,7 @@ void DMA_DoubleBuffer_Start(DMA_Handle_t* hdma, uint32_t srcAddress, uint32_t ds
 	hdma->instance->M0AR = dstAddress1;
 	hdma->instance->M1AR = dstAddress2;
 	hdma->instance->NDTR = numOfTransfers;
+	DMA_Init(hdma);
 	hdma->instance->CR |= 	DMA_CR_EN;
 }
 

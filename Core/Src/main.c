@@ -77,19 +77,17 @@ int main(void){
 
 	DMA2_CLOCK_EN;
 	ADC_Init(&hadc1);
-	DMA_Init(&hdma1);
-	DMA_DoubleBuffer_Start(&hdma1, (uint32_t)&hadc1.instance->DR, (uint32_t)&buff1, (uint32_t)&buff2, 100);
+	__NVIC_EnableIRQ(ADC_IRQn);
+	__enable_irq();
+//	DMA_Init(&hdma1);
+//	DMA_Start(&hdma1, (uint32_t)&hadc1.instance->DR, (uint32_t)buff1, 100);
+	DMA_DoubleBuffer_Start(&hdma1, (uint32_t)&hadc1.instance->DR, (uint32_t)buff1, (uint32_t)buff2, 100);
 	PWM_Init(&htim1);
 	PWM_Start(&htim1);
-	volatile uint16_t sample = 11;
 	while(1){
-		sample = hadc1.instance->DR;
-		(void)sample;
-		count++;
-		if(count > 1000) break;
+
 	}
-	uint16_t temp = count;
-	(void)temp;
+
 	return 0;
 }
 
@@ -102,11 +100,10 @@ void ADC_IRQHandler(void) {
 
     if (hadc1.instance->SR & ADC_SR_OVR_EN){
     	hadc1.instance->SR &= ~ADC_SR_OVR_EN;
-    	ADC_DmaPingPongTx(&hadc1, &hdma1, (uint32_t)&buff1, (uint32_t)&buff2);
+    	ADC_DmaPingPongTx(&hadc1, &hdma1, (uint32_t)buff1, (uint32_t)buff2);
     }
 }
 
-	/* This program is not working */
 
 
 
