@@ -136,6 +136,6 @@ typedef struct __attribute__((packed)) {
 void DMA_Init(DMA_Handle_t* hdma);
 void DMA_Start(DMA_Handle_t* hdma, uint32_t srcAddress, uint32_t dstAddress, uint16_t numOfTransfers);
 void DMA_DeInit(DMA_Handle_t* hdma);
-void DMA_DoubleBuffer_Start(DMA_Handle_t* hdma, uint32_t srcAddress, uint32_t dstAddress1, uint32_t dstAddress2, uint16_t numOfTransfers);
+void DMA_DoubleBuffer_Start(DMA_Handle_t* hdma, uint32_t perAddress, uint32_t memAddress1, uint32_t memAddress2, uint16_t numOfTransfers);
 
 #endif /* INC_HAL_DMA_H_ */

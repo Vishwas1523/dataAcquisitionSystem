@@ -55,15 +55,20 @@ void DMA_Start(DMA_Handle_t* hdma, uint32_t srcAddress, uint32_t dstAddress, uin
 		hdma->instance->CR |= DMA_CR_EN;
 }
 
-void DMA_DoubleBuffer_Start(DMA_Handle_t* hdma, uint32_t srcAddress, uint32_t dstAddress1, uint32_t dstAddress2, uint16_t numOfTransfers){
+void DMA_DoubleBuffer_Start(DMA_Handle_t* hdma, uint32_t perAddress, uint32_t memAddress1, uint32_t memAddress2, uint16_t numOfTransfers){
 	/* DMA must be disabled before changing these registers */
 	hdma->instance->CR &= ~DMA_CR_EN;
 	while (hdma->instance->CR & DMA_CR_EN){
 	        /* Wait until DMA is actually disabled */
 	}
-	hdma->instance->PAR = srcAddress;
-	hdma->instance->M0AR = dstAddress1;
-	hdma->instance->M1AR = dstAddress2;
+
+	/*For memory to peripheral mode this register act as destination address*/
+	hdma->instance->PAR = perAddress;
+
+	/* For memory to peripheral mode these registers act as source address*/
+	hdma->instance->M0AR = memAddress1;
+	hdma->instance->M1AR = memAddress2;
+
 	hdma->instance->NDTR = numOfTransfers;
 	DMA_Init(hdma);
 	hdma->instance->CR |= 	DMA_CR_EN;
