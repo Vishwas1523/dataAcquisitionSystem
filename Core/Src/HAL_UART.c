@@ -1,8 +1,8 @@
 #include "HAL_UART.h"
 
 void UART_Init_tx(UART_Handle_t* huart){
-	/* Enable the UART */
-	huart->Instance->CR1 |= UART_CR1_UE;
+	/* Disable the UART */
+	huart->Instance->CR1 &= ~UART_CR1_UE;
 
 	/* Configure the word length */
 	huart->Instance->CR1 &= ~(1U << UART_CR1_M_Pos);
@@ -17,11 +17,17 @@ void UART_Init_tx(UART_Handle_t* huart){
 	huart->Instance->CR3 |= (huart->Config->dmaTxEnable << UART_CR3_DMAT_Pos);
 
 	/* Configure Baud Rate */
-	huart->Instance->BRR = huart->Config->baudRate;
+	if(huart->Instance == UART_1 || huart->Instance == UART_6)
+	   huart->Instance->BRR = (90000000 + huart->Config->baudRate / 2U)/huart->Config->baudRate;
+	else if (huart->Instance == UART_2)
+	   huart->Instance->BRR = (16000000 + huart->Config->baudRate / 2U)/huart->Config->baudRate;
 
 	/* Configure TE Bit */
 	huart->Instance->CR1 &= ~UART_CR1_TE_EN;
 	huart->Instance->CR1 |= UART_CR1_TE_EN;
+
+	/* Enable the UART */
+	huart->Instance->CR1 |= UART_CR1_UE;
 
 }
 

@@ -48,6 +48,11 @@ typedef enum{
 	UART_2_STOP_BIT = 2
 }UART_StopBits_t;	/* UART stop bits */
 
+typedef enum{
+    UART_BAUD_9600   = 9600,
+    UART_BAUD_115200 = 115200
+}UART_BaudRate_t;
+
 typedef struct{
 	UART_WordLength_t wordLength;
 	UART_StopBits_t stopBits;
@@ -57,7 +62,7 @@ typedef struct{
 	UART_FunctionalState_t intRxEnable;
 	UART_FunctionalState_t recieveEnable;
 	UART_FunctionalState_t transmitEnable;
-	uint16_t baudRate;
+	UART_BaudRate_t baudRate;
 }UART_Config_t;	/* UART configuration structure */
 
 

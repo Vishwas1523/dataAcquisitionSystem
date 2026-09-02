@@ -109,7 +109,7 @@ typedef struct __attribute__((packed)) {
 #define DMA2_Stream_7				(DMA_Stream_Type*)0x400264B8
 
 //------------------------DMA BIT MANIPULATION & MASKING----------------------
-#define DMA_CR_EN					(1<<0)
+#define DMA_CR_EN					(1UL<<0UL)
 #define DMA_CR_CHSEL_Pos			 25UL
 #define DMA_CR_PL_Pos				 16UL
 #define DMA_CR_DIR_Pos				 6UL

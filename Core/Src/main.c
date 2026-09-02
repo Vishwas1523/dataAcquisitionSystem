@@ -4,14 +4,16 @@
 #include "HAL_TIMER.h"
 #include "HAL_DMA.h"
 #include "HAL_UART.h"
-
+#define BUFFER_SIZE					100
 ADC_Handle_t hadc1 = {0};
 TIM_Handle_t htim1 = {0};
 DMA_Handle_t hdma1 = {0};
 DMA_Handle_t hdma2 = {0};
 UART_Handle_t huart1 = {0};
-uint16_t buff1[100] = {0};
-uint16_t buff2[100] = {0};
+uint16_t buff1[BUFFER_SIZE] = {0};
+uint16_t buff2[BUFFER_SIZE] = {0};
+uint8_t ubuff1[100] = {7};
+uint8_t ubuff2[100] = {0};
 uint16_t count = 0;
 int main(void){
 
@@ -67,25 +69,23 @@ int main(void){
 	};
 
 	UART_Config_t config4 ={
-			.dmaTxEnable = DMA_ENABLE,
-			.intTxEnable = DMA_ENABLE,
-			.transmitEnable = DMA_ENABLE,
+			.dmaTxEnable = UART_ENABLE,
+			.intTxEnable = UART_DISABLE,
+			.transmitEnable = UART_ENABLE,
 			.wordLength = UART_8_BIT_DATA,
 			.stopBits = UART_1_STOP_BIT,
-			.baudRate = 0x0683
-	/* Configure baud rate
-       Assuming APB1 clock = 16 MHz
-       Baudrate = 9600
-    */
+			.baudRate = UART_BAUD_9600
 	};
 
 	DMA_Stream_Config_t config5 = {
 			.direction = DMA_DIRECTION_MEM_TO_PER,
 			.peripheralIncrementMode = DMA_DISABLE,
 			.memoryIncrementMode = DMA_ENABLE,
-			.doubleBufferMode = DMA_ENABLE,
-			.PSIZE = DMA_DATA_SIZE_HALF_WORD,
-			.MSIZE = DMA_DATA_SIZE_HALF_WORD,
+			.directModeDisable = DMA_DISABLE,
+			.doubleBufferMode = DMA_DISABLE,
+			.fifoMode = DMA_FIFO_FULL,
+			.PSIZE = DMA_DATA_SIZE_BYTE,
+			.MSIZE = DMA_DATA_SIZE_BYTE,
 			.priority = DMA_PRIORITY_HIGH,
 			.channel = DMA_CHANNEL4
 	};
@@ -108,16 +108,16 @@ int main(void){
 	hdma2.instance = DMA1_Stream_6;
 	hdma2.config = &config5;
 
+	DMA1_CLOCK_EN;
 	DMA2_CLOCK_EN;
 	UART2_CLK_EN;
-	ADC_Init(&hadc1);
-	__NVIC_EnableIRQ(ADC_IRQn);
-	__enable_irq();
-	DMA_DoubleBuffer_Start(&hdma1, (uint32_t)&hadc1.instance->DR, (uint32_t)buff1, (uint32_t)buff2, 100);
+//	ADC_Init(&hadc1);
+//	__NVIC_EnableIRQ(ADC_IRQn);
+//	__enable_irq();
+//	DMA_DoubleBuffer_Start(&hdma1, (uint32_t)&hadc1.instance->DR, (uint32_t)buff1, (uint32_t)buff2, 100);
+//	PWM_Init(&htim1);
+//	PWM_Start(&htim1);
 	UART_Init_tx(&huart1);
-	UART_DMAtx(&huart1, &hdma2, (uint32_t)buff1, (uint32_t)buff2);
-	PWM_Init(&htim1);
-	PWM_Start(&htim1);
 	while(1){
 
 	}
