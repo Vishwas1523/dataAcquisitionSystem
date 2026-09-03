@@ -4,7 +4,7 @@
 #include "HAL_TIMER.h"
 #include "HAL_DMA.h"
 #include "HAL_UART.h"
-#define BUFFER_SIZE					100
+#define BUFFER_SIZE	5
 ADC_Handle_t hadc1 = {0};
 TIM_Handle_t htim1 = {0};
 DMA_Handle_t hdma1 = {0};
@@ -12,8 +12,8 @@ DMA_Handle_t hdma2 = {0};
 UART_Handle_t huart1 = {0};
 uint16_t buff1[BUFFER_SIZE] = {0};
 uint16_t buff2[BUFFER_SIZE] = {0};
-uint8_t ubuff1[100] = {7};
-uint8_t ubuff2[100] = {0};
+volatile uint8_t ubuff1[BUFFER_SIZE] = {'7', '\n', '6', '\n', '5'};
+volatile uint8_t ubuff2[100] = {0};
 uint16_t count = 0;
 int main(void){
 
@@ -118,6 +118,8 @@ int main(void){
 //	PWM_Init(&htim1);
 //	PWM_Start(&htim1);
 	UART_Init_tx(&huart1);
+	UART_DMAtx_Init(&huart1, &hdma2);
+	UART_DMAtx(&huart1, &hdma2, (uint8_t*)ubuff1, BUFFER_SIZE);
 	while(1){
 
 	}

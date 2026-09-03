@@ -76,8 +76,8 @@ typedef struct{
 //------------------------------ UART Functions ---------------------------------------------
 
 void UART_Init_tx(UART_Handle_t* huart);
-void UART_DMAtx(UART_Handle_t* huart, DMA_Handle_t* hdma, uint32_t memAddress1, uint32_t memAddress2);
-
+void UART_DMAtx_Init(UART_Handle_t* huart, DMA_Handle_t* hdma);
+void UART_DMAtx(UART_Handle_t* huart, DMA_Handle_t* hdma, uint8_t* data, uint16_t bufferSize);
 
 
 

@@ -32,11 +32,59 @@ void UART_Init_tx(UART_Handle_t* huart){
 }
 
 
-void UART_DMAtx(UART_Handle_t* huart, DMA_Handle_t* hdma, uint32_t memAddress1, uint32_t memAddress2){
-	DMA_DoubleBuffer_Start(hdma, (uint32_t)&huart->Instance->DR, memAddress1, memAddress2, 100);
+void UART_DMAtx_Init(UART_Handle_t* huart, DMA_Handle_t* hdma){
+	/* Disabling DMA controller before configuring */
+	hdma->instance->CR &= ~DMA_CR_EN;
+	while (hdma->instance->CR & DMA_CR_EN){
+	        /* Wait until DMA is actually disabled */
+	}
+
+	/* Configuring channel number */
+	hdma->instance->CR &= ~(7U << DMA_CR_CHSEL_Pos);
+	hdma->instance->CR |= hdma->config->channel	<< DMA_CR_CHSEL_Pos;
+
+	/* Configuring priority */
+	hdma->instance->CR &= ~(3U << DMA_CR_PL_Pos);
+	hdma->instance->CR |= hdma->config->priority<<DMA_CR_PL_Pos;
+
+	/* Hardcoding DMA Direction */
+	hdma->instance->CR &= ~(3U << DMA_CR_DIR_Pos);
+	hdma->instance->CR |= DMA_DIRECTION_MEM_TO_PER << DMA_CR_DIR_Pos;
+
+	/* Hardcoding peripheral and memory data size */
+	hdma->instance->CR &= ~(3U << DMA_CR_PSIZE_Pos);
+	hdma->instance->CR |= DMA_DATA_SIZE_BYTE << DMA_CR_PSIZE_Pos;
+	hdma->instance->CR &= ~(3U << DMA_CR_MSIZE_Pos);
+	hdma->instance->CR |= DMA_DATA_SIZE_BYTE << DMA_CR_MSIZE_Pos;
+
+	/* Hardcoding memory and peripheral increment modes */
+	hdma->instance->CR &=	~(1U << DMA_CR_PINC_Pos);
+	hdma->instance->CR |=   DMA_ENABLE << DMA_CR_MINC_Pos;
+
+	/* Hardcoding peripheral address */
+	hdma->instance->PAR = (uint32_t)&huart->Instance->DR;
+
 }
 
+void UART_DMAtx(UART_Handle_t* huart, DMA_Handle_t* hdma, uint8_t* data, uint16_t bufferSize){
+	/* Disabling DMA controller before configuring */
+	hdma->instance->CR &= ~DMA_CR_EN;
+	while (hdma->instance->CR & DMA_CR_EN){
+	        /* Wait until DMA is actually disabled */
+	}
+	/* Configuring Memory address */
+	hdma->instance->M0AR = (uint32_t)data;
 
+	/* Configuring number of transfers */
+	hdma->instance->NDTR = bufferSize;
+
+	/* Configure DMA Transfer*/
+	huart->Instance->CR3 &= ~(1U << UART_CR3_DMAT_Pos);
+	huart->Instance->CR3 |= (1 << UART_CR3_DMAT_Pos);
+
+	/* Enabling DMA trasnfer */
+	hdma->instance->CR |= DMA_CR_EN;
+}
 
 
 
