@@ -47,6 +47,9 @@ void UART_DMAtx_Init(UART_Handle_t* huart, DMA_Handle_t* hdma){
 	hdma->instance->CR &= ~(3U << DMA_CR_PL_Pos);
 	hdma->instance->CR |= hdma->config->priority<<DMA_CR_PL_Pos;
 
+	/* Configuring Double Buffer Mode */
+	hdma->instance->CR |= hdma->config->doubleBufferMode << DMA_CR_DBM_Pos;
+
 	/* Hardcoding DMA Direction */
 	hdma->instance->CR &= ~(3U << DMA_CR_DIR_Pos);
 	hdma->instance->CR |= DMA_DIRECTION_MEM_TO_PER << DMA_CR_DIR_Pos;
@@ -82,7 +85,30 @@ void UART_DMAtx(UART_Handle_t* huart, DMA_Handle_t* hdma, uint8_t* data, uint16_
 	huart->Instance->CR3 &= ~(1U << UART_CR3_DMAT_Pos);
 	huart->Instance->CR3 |= (1 << UART_CR3_DMAT_Pos);
 
-	/* Enabling DMA trasnfer */
+	/* Enabling DMA transfer */
+	hdma->instance->CR |= DMA_CR_EN;
+}
+
+void UART_DoubleBuffer_DMAtx(UART_Handle_t* huart, DMA_Handle_t* hdma, uint8_t* data1, uint8_t* data2, uint16_t bufferSize){
+	/* Disabling DMA controller before configuring */
+	hdma->instance->CR &= ~DMA_CR_EN;
+	while (hdma->instance->CR & DMA_CR_EN){
+	        /* Wait until DMA is actually disabled */
+	}
+	/* Configuring Memory address 1 */
+	hdma->instance->M0AR = (uint32_t)data1;
+
+	/* Configuring Memory address 2 */
+	hdma->instance->M1AR = (uint32_t)data2;
+
+	/* Configuring number of transfers */
+	hdma->instance->NDTR = bufferSize;
+
+	/* Configure DMA Transfer*/
+	huart->Instance->CR3 &= ~(1U << UART_CR3_DMAT_Pos);
+	huart->Instance->CR3 |= (1 << UART_CR3_DMAT_Pos);
+
+	/* Enabling DMA transfer */
 	hdma->instance->CR |= DMA_CR_EN;
 }
 

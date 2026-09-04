@@ -6,7 +6,7 @@
 
 
 //-----------------------------------GPIO Registers---------------------------------------
-typedef struct __attribute__((packed)){
+typedef struct {
 	volatile uint32_t MODER;
 	volatile uint32_t OTYPER;
 	volatile uint32_t OSPEEDR;

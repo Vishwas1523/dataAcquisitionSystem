@@ -4,7 +4,8 @@
 #include "HAL_TIMER.h"
 #include "HAL_DMA.h"
 #include "HAL_UART.h"
-#define BUFFER_SIZE	5
+#include <stddef.h>
+#define BUFFER_SIZE	100
 ADC_Handle_t hadc1 = {0};
 TIM_Handle_t htim1 = {0};
 DMA_Handle_t hdma1 = {0};
@@ -12,9 +13,15 @@ DMA_Handle_t hdma2 = {0};
 UART_Handle_t huart1 = {0};
 uint16_t buff1[BUFFER_SIZE] = {0};
 uint16_t buff2[BUFFER_SIZE] = {0};
-volatile uint8_t ubuff1[BUFFER_SIZE] = {'7', '\n', '6', '\n', '5'};
-volatile uint8_t ubuff2[100] = {0};
-uint16_t count = 0;
+volatile uint8_t ubuff1[2*BUFFER_SIZE] = {0};
+volatile uint8_t ubuff2[2*BUFFER_SIZE] = {0};
+void ADCtoUART(uint16_t* adcBuffer, uint8_t* uartBuffer){
+	for(size_t i = 0; i < BUFFER_SIZE; i++){
+		*(uartBuffer + (2*i)) = (*(adcBuffer + i) & 0x3F);
+		*(uartBuffer + ((2*i) + 1)) = (*(adcBuffer + i) >> 6);
+	}
+}
+
 int main(void){
 
 	GPIO_Handle_t hgpio1 = {0};
@@ -82,7 +89,7 @@ int main(void){
 			.peripheralIncrementMode = DMA_DISABLE,
 			.memoryIncrementMode = DMA_ENABLE,
 			.directModeDisable = DMA_DISABLE,
-			.doubleBufferMode = DMA_DISABLE,
+			.doubleBufferMode = DMA_ENABLE,
 			.fifoMode = DMA_FIFO_FULL,
 			.PSIZE = DMA_DATA_SIZE_BYTE,
 			.MSIZE = DMA_DATA_SIZE_BYTE,
@@ -111,17 +118,23 @@ int main(void){
 	DMA1_CLOCK_EN;
 	DMA2_CLOCK_EN;
 	UART2_CLK_EN;
-//	ADC_Init(&hadc1);
-//	__NVIC_EnableIRQ(ADC_IRQn);
-//	__enable_irq();
-//	DMA_DoubleBuffer_Start(&hdma1, (uint32_t)&hadc1.instance->DR, (uint32_t)buff1, (uint32_t)buff2, 100);
-//	PWM_Init(&htim1);
-//	PWM_Start(&htim1);
+	ADC_Init(&hadc1);
+	__NVIC_EnableIRQ(ADC_IRQn);
+	__enable_irq();
+	DMA_DoubleBuffer_Start(&hdma1, (uint32_t)&hadc1.instance->DR, (uint32_t)buff1, (uint32_t)buff2, 100);
+	PWM_Init(&htim1);
+	PWM_Start(&htim1);
+//	ADCtoUART((uint16_t*)buff1, (uint8_t*)ubuff1);
+//	ADCtoUART((uint16_t*)buff2, (uint8_t*)ubuff2);
 	UART_Init_tx(&huart1);
 	UART_DMAtx_Init(&huart1, &hdma2);
-	UART_DMAtx(&huart1, &hdma2, (uint8_t*)ubuff1, BUFFER_SIZE);
+	UART_DoubleBuffer_DMAtx(&huart1, &hdma2, (uint8_t* )ubuff1, (uint8_t* )ubuff2 , BUFFER_SIZE);
 	while(1){
-
+		size_t count = 10000000;
+		while(count){
+			--count;
+		}
+		hdma2.instance->CR &= ~DMA_CR_EN;
 	}
 
 	return 0;

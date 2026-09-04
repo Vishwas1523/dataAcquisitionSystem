@@ -53,7 +53,7 @@ typedef enum{
     UART_BAUD_115200 = 115200
 }UART_BaudRate_t;
 
-typedef struct{
+typedef struct __attribute__((packed)){
 	UART_WordLength_t wordLength;
 	UART_StopBits_t stopBits;
 	UART_FunctionalState_t dmaTxEnable;
@@ -68,7 +68,7 @@ typedef struct{
 
 //----------------------------- UART Handler ----------------------------------------
 
-typedef struct{
+typedef struct __attribute__((packed)){
 	UART_Type* Instance;
 	UART_Config_t* Config;
 }UART_Handle_t;
@@ -78,7 +78,7 @@ typedef struct{
 void UART_Init_tx(UART_Handle_t* huart);
 void UART_DMAtx_Init(UART_Handle_t* huart, DMA_Handle_t* hdma);
 void UART_DMAtx(UART_Handle_t* huart, DMA_Handle_t* hdma, uint8_t* data, uint16_t bufferSize);
-
+void UART_DoubleBuffer_DMAtx(UART_Handle_t* huart, DMA_Handle_t* hdma, uint8_t* data1, uint8_t* data2, uint16_t bufferSize);
 
 
 
