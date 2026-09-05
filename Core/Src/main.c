@@ -11,17 +11,19 @@ TIM_Handle_t htim1 = {0};
 DMA_Handle_t hdma1 = {0};
 DMA_Handle_t hdma2 = {0};
 UART_Handle_t huart1 = {0};
-uint16_t buff1[BUFFER_SIZE] = {0};
-uint16_t buff2[BUFFER_SIZE] = {0};
+volatile uint16_t buff1[BUFFER_SIZE] = {0};
+volatile uint16_t buff2[BUFFER_SIZE] = {0};
 volatile uint8_t ubuff1[2*BUFFER_SIZE] = {0};
 volatile uint8_t ubuff2[2*BUFFER_SIZE] = {0};
-void ADCtoUART(uint16_t* adcBuffer, uint8_t* uartBuffer){
+void ADCtoUART(volatile uint16_t* adcBuffer, volatile uint8_t* uartBuffer){
 	for(size_t i = 0; i < BUFFER_SIZE; i++){
-		*(uartBuffer + (2*i)) = (*(adcBuffer + i) & 0x3F);
-		*(uartBuffer + ((2*i) + 1)) = (*(adcBuffer + i) >> 6);
+		*(uartBuffer + (2*i)) = (char)(*(adcBuffer + i) & 0x3F);
+		*(uartBuffer + ((2*i) + 1)) = (char)(*(adcBuffer + i) >> 6);
 	}
 }
 
+volatile uint16_t convert1 = 0;
+volatile uint16_t convert2 = 0;
 int main(void){
 
 	GPIO_Handle_t hgpio1 = {0};
@@ -119,22 +121,30 @@ int main(void){
 	DMA2_CLOCK_EN;
 	UART2_CLK_EN;
 	ADC_Init(&hadc1);
-	__NVIC_EnableIRQ(ADC_IRQn);
+//	__NVIC_EnableIRQ(ADC_IRQn);
+	__NVIC_EnableIRQ(DMA2_Stream0_IRQn);
 	__enable_irq();
 	DMA_DoubleBuffer_Start(&hdma1, (uint32_t)&hadc1.instance->DR, (uint32_t)buff1, (uint32_t)buff2, 100);
 	PWM_Init(&htim1);
 	PWM_Start(&htim1);
-//	ADCtoUART((uint16_t*)buff1, (uint8_t*)ubuff1);
-//	ADCtoUART((uint16_t*)buff2, (uint8_t*)ubuff2);
 	UART_Init_tx(&huart1);
 	UART_DMAtx_Init(&huart1, &hdma2);
-	UART_DoubleBuffer_DMAtx(&huart1, &hdma2, (uint8_t* )ubuff1, (uint8_t* )ubuff2 , BUFFER_SIZE);
+	UART_DoubleBuffer_DMAtx(&huart1, &hdma2, (uint8_t* )ubuff1, (uint8_t* )ubuff2 , 2*BUFFER_SIZE);
 	while(1){
-		size_t count = 10000000;
-		while(count){
-			--count;
+		if(convert1){
+			ADCtoUART((uint16_t*)buff2, (uint8_t*)ubuff2);
+			convert1 =  0;
 		}
-		hdma2.instance->CR &= ~DMA_CR_EN;
+		if(convert2){
+			ADCtoUART((uint16_t*)buff1, (uint8_t*)ubuff1);
+			convert2 = 0;
+		}
+
+//		size_t count = 10000000;
+//		while(count){
+//			--count;
+//		}
+//		hdma2.instance->CR &= ~DMA_CR_EN;
 	}
 
 	return 0;
@@ -153,7 +163,17 @@ void ADC_IRQHandler(void) {
     }
 }
 
+void DMA2_Stream0_IRQHandler(void){
+	if(hdma1.controller->LISR & DMA_LISR_TCIF0_Set){
+		if(hdma1.instance->CR & DMA_CR_CT_EN){
+			convert1++;
+		}else{
+			convert2++;
+		}
+		hdma1.controller->LISR &= ~DMA_LISR_TCIF0_Set;
+	}
 
+}
 
 
 

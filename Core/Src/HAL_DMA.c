@@ -21,6 +21,7 @@ void DMA_Init(DMA_Handle_t* hdma){
 	hdma->instance->CR |= hdma->config->MSIZE << DMA_CR_MSIZE_Pos;
 	hdma->instance->CR |=	hdma->config->peripheralIncrementMode<<DMA_CR_PINC_Pos;
 	hdma->instance->CR |=   hdma->config->memoryIncrementMode<<DMA_CR_MINC_Pos;
+	hdma->instance->CR |= DMA_CR_TCIE_EN;
 }
 
 void DMA_Start(DMA_Handle_t* hdma, uint32_t srcAddress, uint32_t dstAddress, uint16_t numOfTransfers){

@@ -126,6 +126,8 @@ typedef struct __attribute__((packed)) {
 #define DMA_CR_MINC_EN				(1<<10)
 #define DMA_CR_DBM_Pos				 18UL
 #define DMA_CR_CT_EN				(1UL<<19UL)
+#define DMA_CR_TCIE_EN				(1UL<<4UL)
+#define DMA_LISR_TCIF0_Set			(1UL<<5UL)
 
 //----------------------------DMA CONTROLLER--------------------------------------
 
