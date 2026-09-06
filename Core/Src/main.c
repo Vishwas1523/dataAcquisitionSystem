@@ -21,9 +21,10 @@ void ADCtoUART(volatile uint16_t* adcBuffer, volatile uint8_t* uartBuffer){
 		*(uartBuffer + ((2*i) + 1)) = (char)(*(adcBuffer + i) >> 6);
 	}
 }
-
-volatile uint16_t convert1 = 0;
-volatile uint16_t convert2 = 0;
+volatile uint16_t buff1complete = 0;
+volatile uint16_t buff2complete = 0;
+volatile uint16_t ubuff1complete = 0;
+volatile uint16_t ubuff2complete = 0;
 int main(void){
 
 	GPIO_Handle_t hgpio1 = {0};
@@ -83,7 +84,7 @@ int main(void){
 			.transmitEnable = UART_ENABLE,
 			.wordLength = UART_8_BIT_DATA,
 			.stopBits = UART_1_STOP_BIT,
-			.baudRate = UART_BAUD_9600
+			.baudRate = UART_BAUD_115200
 	};
 
 	DMA_Stream_Config_t config5 = {
@@ -123,28 +124,36 @@ int main(void){
 	ADC_Init(&hadc1);
 //	__NVIC_EnableIRQ(ADC_IRQn);
 	__NVIC_EnableIRQ(DMA2_Stream0_IRQn);
+	__NVIC_EnableIRQ(DMA1_Stream6_IRQn);
 	__enable_irq();
 	DMA_DoubleBuffer_Start(&hdma1, (uint32_t)&hadc1.instance->DR, (uint32_t)buff1, (uint32_t)buff2, 100);
 	PWM_Init(&htim1);
 	PWM_Start(&htim1);
-	UART_Init_tx(&huart1);
-	UART_DMAtx_Init(&huart1, &hdma2);
-	UART_DoubleBuffer_DMAtx(&huart1, &hdma2, (uint8_t* )ubuff1, (uint8_t* )ubuff2 , 2*BUFFER_SIZE);
 	while(1){
-		if(convert1){
-			ADCtoUART((uint16_t*)buff2, (uint8_t*)ubuff2);
-			convert1 =  0;
-		}
-		if(convert2){
+		if(buff1complete){
+			buff1complete =  0;
 			ADCtoUART((uint16_t*)buff1, (uint8_t*)ubuff1);
-			convert2 = 0;
+		}
+		if(buff2complete){
+			buff2complete = 0;
+			hdma2.instance->CR &= ~DMA_CR_EN;
+			htim1.instance->CR1 &= ~(1U	<<	0U);
+			hadc1.instance->CR2	&= ~(1U << 0);
+			hdma1.instance->CR &= ~DMA_CR_TCIE_EN;
+			for(size_t i = 0; i < 100000; i++);
+			ADCtoUART((uint16_t*)buff2, (uint8_t*)ubuff2);
+			UART_Init_tx(&huart1);
+			UART_DMAtx_Init(&huart1, &hdma2);
+			UART_DoubleBuffer_DMAtx(&huart1, &hdma2, (uint8_t* )ubuff1, (uint8_t* )ubuff2 , 2*BUFFER_SIZE);
 		}
 
-//		size_t count = 10000000;
-//		while(count){
-//			--count;
-//		}
-//		hdma2.instance->CR &= ~DMA_CR_EN;
+		if(ubuff2complete){
+			huart1.Instance->CR1 &= ~UART_CR1_UE;
+			hdma2.instance->CR &= ~DMA_CR_EN;
+			break;
+		}
+
+
 	}
 
 	return 0;
@@ -166,14 +175,23 @@ void ADC_IRQHandler(void) {
 void DMA2_Stream0_IRQHandler(void){
 	if(hdma1.controller->LISR & DMA_LISR_TCIF0_Set){
 		if(hdma1.instance->CR & DMA_CR_CT_EN){
-			convert1++;
+			buff1complete = 1;
 		}else{
-			convert2++;
+			buff2complete = 1;
 		}
-		hdma1.controller->LISR &= ~DMA_LISR_TCIF0_Set;
+		hdma1.controller->LIFCR |= DMA_LISR_TCIF0_Set;
 	}
 
 }
 
+void DMA1_Stream6_IRQHandler(void){
+	if(hdma2.controller->HISR & DMA_HISR_TCIF6_Set){
+			if(hdma2.instance->CR & DMA_CR_CT_EN){
+				ubuff1complete = 1;
+			}else{
+				ubuff2complete = 1;
+			}
+			hdma2.controller->HIFCR |= DMA_HISR_TCIF6_Set;
+		}
 
-
+}
