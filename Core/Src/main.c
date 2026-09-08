@@ -6,31 +6,43 @@
 #include "HAL_UART.h"
 #include <stddef.h>
 #define BUFFER_SIZE	100
+
+//---------------------------- Peripheral Handlers ---------------------------------
+
 ADC_Handle_t hadc1 = {0};
 TIM_Handle_t htim1 = {0};
 DMA_Handle_t hdma1 = {0};
 DMA_Handle_t hdma2 = {0};
 UART_Handle_t huart1 = {0};
+
+//---------------------------- Buffers ------------------------------------
+
 volatile uint16_t buff1[BUFFER_SIZE] = {0};
 volatile uint16_t buff2[BUFFER_SIZE] = {0};
 volatile uint8_t ubuff1[2*BUFFER_SIZE] = {0};
 volatile uint8_t ubuff2[2*BUFFER_SIZE] = {0};
+
+//----------------------------- ADC to UART data -----------------------------
+
 void ADCtoUART(volatile uint16_t* adcBuffer, volatile uint8_t* uartBuffer){
 	for(size_t i = 0; i < BUFFER_SIZE; i++){
 		*(uartBuffer + (2*i)) = (char)(*(adcBuffer + i) & 0x3F);
 		*(uartBuffer + ((2*i) + 1)) = (char)(*(adcBuffer + i) >> 6);
 	}
 }
-volatile uint8_t buff1isEmpty = 1;
-volatile uint8_t buff2isEmpty = 1;
-volatile uint8_t buff1isFilling = 0;
-volatile uint8_t buff1isFilled = 0;
-volatile uint8_t buff1isConverting = 0;
-volatile uint8_t buff1isConverted = 0;
-volatile uint8_t buff2isFilling = 0;
-volatile uint8_t buff2isFilled = 0;
-volatile uint8_t buff2isConverting = 0;
-volatile uint8_t buff2isConverted = 0;
+
+//----------------------------- Buffer States ---------------------------------------
+
+typedef enum{
+	BUFFER_EMPTY = 0,
+	BUFFER_FILLING,
+	BUFFER_FILLED
+} bufferState;
+
+volatile bufferState buffer1State = BUFFER_EMPTY;
+volatile bufferState buffer2State = BUFFER_EMPTY;
+//--------------------------------------------------------------------
+
 int main(void){
 
 	GPIO_Handle_t hgpio1 = {0};
@@ -124,9 +136,9 @@ int main(void){
 	hdma2.instance = DMA1_Stream_6;
 	hdma2.config = &config5;
 
-	DMA1_CLOCK_EN;
+//	DMA1_CLOCK_EN;
 	DMA2_CLOCK_EN;
-	UART2_CLK_EN;
+//	UART2_CLK_EN;
 	ADC_Init(&hadc1);
 //	__NVIC_EnableIRQ(ADC_IRQn);
 	__NVIC_EnableIRQ(DMA2_Stream0_IRQn);
@@ -134,32 +146,15 @@ int main(void){
 	__enable_irq();
 	DMA_DoubleBuffer_Start(&hdma1, (uint32_t)&hadc1.instance->DR, (uint32_t)buff1, (uint32_t)buff2, 100);
 	PWM_Init(&htim1);
+	buffer1State = BUFFER_FILLING;
 	PWM_Start(&htim1);
-	UART_Init_tx(&huart1);
-	UART_DMAtx_Init(&huart1, &hdma2);
+//	UART_Init_tx(&huart1);
+//	UART_DMAtx_Init(&huart1, &hdma2);
 //	UART_DoubleBuffer_DMAtx(&huart1, &hdma2, (uint8_t* )ubuff1, (uint8_t* )ubuff2 , 2*BUFFER_SIZE);
 	while(1){
-		if(buff1isFilled == 1 && buff2isFilling == 1){
-			buff1isConverting = 1;
-			ADCtoUART((uint16_t*)buff1, (uint8_t*)ubuff1);
-			buff1isConverting = 0;
-			buff1isConverted = 1;
+		if(buffer1State == BUFFER_FILLED && buffer2State == BUFFER_FILLED){
+			hdma1.instance->CR &= ~DMA_CR_EN;
 		}
-		if(buff1isFilling) buff1isFilled = 0;
-		if(buff2isFilled == 1 && buff1isFilling == 1){
-			buff2isConverting = 1;
-			ADCtoUART((uint16_t*)buff2, (uint8_t*)ubuff2);
-			buff2isConverting = 0;
-			buff2isConverted = 1;
-		}
-		if(buff2isFilling) buff2isFilled = 0;
-		if(buff1isConverted == 1 && buff2isFilling == 1){
-			UART_DMAtx(&huart1, &hdma2, (uint8_t*)ubuff1, 2*BUFFER_SIZE);
-		}
-		if(buff2isConverted == 1 && buff1isFilling == 1){
-			UART_DMAtx(&huart1, &hdma2, (uint8_t*)ubuff2, 2*BUFFER_SIZE);
-		}
-
 	}
 
 	return 0;
@@ -181,15 +176,11 @@ void ADC_IRQHandler(void) {
 void DMA2_Stream0_IRQHandler(void){
 	if(hdma1.controller->LISR & DMA_LISR_TCIF0_Set){
 		if(hdma1.instance->CR & DMA_CR_CT_EN){
-			buff2isFilling = 1;
-			buff2isEmpty = 0;
-			buff1isFilling = 0;
-			if(!(buff1isEmpty)) buff1isFilled = 1;
-		}else{
-			buff1isFilling = 1;
-			buff1isEmpty = 0;
-			buff2isFilling = 0;
-			if(!(buff2isEmpty)) buff2isFilled = 1;
+			buffer1State = BUFFER_FILLED;
+			buffer2State = BUFFER_FILLING;
+		}
+		else if(buffer1State == BUFFER_FILLED && !(hdma1.controller->LISR & DMA_LISR_TCIF0_Set)){
+			buffer2State = BUFFER_FILLED;
 		}
 		hdma1.controller->LIFCR |= DMA_LISR_TCIF0_Set;
 	}
