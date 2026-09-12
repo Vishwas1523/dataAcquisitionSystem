@@ -17,14 +17,14 @@ UART_Handle_t huart1 = {0};
 
 //---------------------------- Buffers ------------------------------------
 
-volatile uint16_t buff1[BUFFER_SIZE] = {0};
-volatile uint16_t buff2[BUFFER_SIZE] = {0};
-volatile uint8_t ubuff1[2*BUFFER_SIZE] = {0};
-volatile uint8_t ubuff2[2*BUFFER_SIZE] = {0};
+volatile uint8_t buff1[BUFFER_SIZE] = {0};
+volatile uint8_t buff2[BUFFER_SIZE] = {0};
+volatile uint8_t ubuff1[BUFFER_SIZE] = {0};
+volatile uint8_t ubuff2[BUFFER_SIZE] = {0};
 
 //----------------------------- ADC to UART data -----------------------------
 
-void ADCtoUART(volatile uint16_t* adcBuffer, volatile uint8_t* uartBuffer){
+void ADCtoUART(volatile uint8_t* adcBuffer, volatile uint8_t* uartBuffer){
 	for(size_t i = 0; i < BUFFER_SIZE; i++){
 		*(uartBuffer + (2*i)) = (char)(*(adcBuffer + i) & 0x3F);
 		*(uartBuffer + ((2*i) + 1)) = (char)(*(adcBuffer + i) >> 6);
@@ -41,6 +41,7 @@ typedef enum{
 
 volatile bufferState buffer1State = BUFFER_EMPTY;
 volatile bufferState buffer2State = BUFFER_EMPTY;
+volatile uint8_t count = 0;
 //--------------------------------------------------------------------
 
 int main(void){
@@ -74,7 +75,7 @@ int main(void){
 //			.softwareTrigger = ADC_ENABLE,
 			.numberOfConversions = ADC_1_CONVERSION,
 			.overrunEnable = ADC_ENABLE,
-			.resolution = ADC_12_BIT_RESOLUTION,
+			.resolution = ADC_8_BIT_RESOLUTION,
 			.samplingTime = ADC_SAMPLING_CYCLES_3,
 			.scanMode = ADC_DISABLE
 	};
@@ -90,8 +91,8 @@ int main(void){
 			.peripheralIncrementMode = DMA_DISABLE,
 			.memoryIncrementMode = DMA_ENABLE,
 			.doubleBufferMode = DMA_ENABLE,
-			.PSIZE = DMA_DATA_SIZE_HALF_WORD,
-			.MSIZE = DMA_DATA_SIZE_HALF_WORD,
+			.PSIZE = DMA_DATA_SIZE_BYTE,
+			.MSIZE = DMA_DATA_SIZE_BYTE,
 			.priority = DMA_PRIORITY_VERY_HIGH,
 			.channel = DMA_CHANNEL0
 	};
@@ -145,44 +146,34 @@ int main(void){
 //	__NVIC_EnableIRQ(DMA1_Stream6_IRQn);
 	__enable_irq();
 	DMA_DoubleBuffer_Start(&hdma1, (uint32_t)&hadc1.instance->DR, (uint32_t)buff1, (uint32_t)buff2, 100);
-	PWM_Init(&htim1);
 	buffer1State = BUFFER_FILLING;
+	PWM_Init(&htim1);
 	PWM_Start(&htim1);
 //	UART_Init_tx(&huart1);
 //	UART_DMAtx_Init(&huart1, &hdma2);
 //	UART_DoubleBuffer_DMAtx(&huart1, &hdma2, (uint8_t* )ubuff1, (uint8_t* )ubuff2 , 2*BUFFER_SIZE);
 	while(1){
-		if(buffer1State == BUFFER_FILLED && buffer2State == BUFFER_FILLED){
-			hdma1.instance->CR &= ~DMA_CR_EN;
-		}
+
 	}
 
 	return 0;
 }
 
-
-void ADC_IRQHandler(void) {
-
-    if (hadc1.instance->SR & ADC_SR_EOC_EN) {
-
-    }
-
-    if (hadc1.instance->SR & ADC_SR_OVR_EN){
-    	hadc1.instance->SR &= ~ADC_SR_OVR_EN;
-    	ADC_DmaPingPongTx(&hadc1, &hdma1, (uint32_t)buff1, (uint32_t)buff2);
-    }
-}
-
 void DMA2_Stream0_IRQHandler(void){
-	if(hdma1.controller->LISR & DMA_LISR_TCIF0_Set){
-		if(hdma1.instance->CR & DMA_CR_CT_EN){
-			buffer1State = BUFFER_FILLED;
-			buffer2State = BUFFER_FILLING;
-		}
-		else if(buffer1State == BUFFER_FILLED && !(hdma1.controller->LISR & DMA_LISR_TCIF0_Set)){
-			buffer2State = BUFFER_FILLED;
-		}
-		hdma1.controller->LIFCR |= DMA_LISR_TCIF0_Set;
-	}
+    if (hdma1.controller->LISR & DMA_LISR_TCIF0){
+        count++;
+        if (count == 1){
+            buffer1State = BUFFER_FILLED;
+            buffer2State = BUFFER_FILLING;
+        }
+        else if (count == 2){
+            buffer2State = BUFFER_FILLED;
 
+            // Stop DMA after second buffer
+            hdma1.instance->CR &= ~DMA_CR_EN;
+        }
+
+        // Clear TC flag
+        hdma1.controller->LIFCR = DMA_LIFCR_CTCIF0;
+    }
 }
